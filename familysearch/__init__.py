@@ -180,7 +180,7 @@ class FamilySearch(FSBase):
     def get(self, url, data=None, headers=None, nojson=False):
         """HTTP GET request"""
         return self._fs2py(self._request(
-    url, data, headers, "GET", nojson), nojson)
+    url, data, headers, None, nojson), nojson)
 
     def post(self, url, data=None, headers=None, nojson=False):
         """HTTP POST request"""
