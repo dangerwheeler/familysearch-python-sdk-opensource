@@ -14,6 +14,7 @@ except ImportError:
     import BaseHTTPServer as server
 
 import webbrowser
+import pprint
 
 # Magic
 
@@ -22,9 +23,7 @@ class Authentication(object):
         """https://familysearch.org/developers/docs/api/resources#authentication
         Set up the URLs for authentication.
         """
-        from . import FamilySearch
-        FamilySearch.__bases__ += (Authentication,)
-        self.token = self.root_collection['collections'][0]['links']\
+        self.token = self.root_collection['response']['collections'][0]['links']\
         ['http://oauth.net/core/2.0/endpoint/token']['href']
         cookie_handler = HTTPCookieProcessor()
         self.cookies = cookie_handler.cookiejar
@@ -59,7 +58,7 @@ class Authentication(object):
         """
         self.logged_in = False
         self.cookies.clear()
-        url = self.root_collection['collections'][0]['links']\
+        url = self.root_collection['response']['collections'][0]['links']\
         ['http://oauth.net/core/2.0/endpoint/authorize']['href']
         url = self._add_query_params(url, {'response_type': 'code',
                                      'client_id': self.key,
@@ -72,8 +71,8 @@ class Authentication(object):
 
     def oauth_code_login(self, code):
         """
-        Convenience function for Web servers to log into Familysearch
-        with the token code Familysearch hands you.
+        Convenience function for Web servers to log into FamilySearch
+        with the token code FamilySearch hands you.
         """
         url = self.token
         credentials = urlencode({'grant_type': 'authorization_code',
@@ -84,7 +83,7 @@ class Authentication(object):
         response = self._request(url, credentials,
                                  {"Content-Type": "application/x-www-form-urlencoded",
                                  "Accept": "application/json"}, nojson=True)
-        self.session_id = self._fs2py(response)['access_token']
+        self.session_id = self._fs2py(response)['response']['access_token']
         self.logged_in = True
         self.fix_discovery()
 
@@ -97,7 +96,8 @@ class Authentication(object):
         self.logged_in = False
         self.cookies.clear()
         url = self.token
-        credentials = urlencode({'ip_address': ip_address, #TODO: make IP address generiation automatic
+        credentials = urlencode({'ip_address': ip_address,
+                                 #TODO: make IP address generiation automatic
                                  'client_id': self.key,
                                  'grant_type': 'unauthenticated_session'
                                  })
@@ -105,7 +105,7 @@ class Authentication(object):
         response = self._request(url, credentials,
                                  {"Content-Type": "application/x-www-form-urlencoded",
                                  "Accept": "application/json"}, nojson=True)
-        self.session_id = self._fs2py(response)['access_token']
+        self.session_id = self._fs2py(response)['response']['access_token']
         self.logged_in = True
         self.fix_discovery()
 
@@ -139,3 +139,6 @@ class getter(server.BaseHTTPRequestHandler):
         self.wfile.write(b"<p>You can safely close this page.</p>")
         self.wfile.write(b"</body")
         self.wfile.write(b"</html>")
+
+from familysearch import FamilySearch
+FamilySearch.__bases__ += (Authentication,)
